@@ -15,7 +15,7 @@ from colors import red, blue
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/interpolated_pre_trained_fine_tuned_model", help="Model name"
 )
 def infer(model_name: str):
     prompt = "it is a terrible movie. this is not"
@@ -30,7 +30,7 @@ def infer(model_name: str):
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/interpolated_pre_trained_fine_tuned_model", help="Model name"
 )
 def evaluate(model_name: str):
     dataset = datasets.load_dataset("paws", 'labeled_final', split="validation")
@@ -38,14 +38,14 @@ def evaluate(model_name: str):
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
     preds_original, labels = [], []
-    for i in range(len(examples["sentence1"])):
-            sentence_1 = examples["sentence1"][i].strip()
-            sentence_2 = examples["sentence2"][i].strip()
-            if sentence_1[-1] not in [".", "?", "!"]:
-                sentence_1 += "."
-            if sentence_2[-1] not in [".", "?", "!"]:
-                sentence_2 += "."
-
+    for i in range(len(dataset["sentence1"])):
+        sentence_1 = dataset["sentence1"][i].strip()
+        sentence_2 = dataset["sentence2"][i].strip()
+        if sentence_1[-1] not in [".", "?", "!"]:
+            sentence_1 += "."
+        if sentence_2[-1] not in [".", "?", "!"]:
+            sentence_2 += "."
+        
         processed_sentence_original = f"This does suggest that {sentence_1} and {sentence_2} are"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"

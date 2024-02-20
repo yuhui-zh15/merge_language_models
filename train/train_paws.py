@@ -106,7 +106,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
     # model.parallelize()  # turn this on when using gpt2-xl
 
     training_args = TrainingArguments(
-        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_epochs{number_epochs}",
+        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_PAWS_epochs{number_epochs}",
         evaluation_strategy="epoch",
         learning_rate=2e-5,
         weight_decay=0.01,
