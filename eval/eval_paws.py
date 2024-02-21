@@ -1,7 +1,7 @@
 # Code adapted from https://huggingface.co/docs/transformers/v4.25.1/en/tasks/language_modeling#language-modeling
 
 # - Evaluation:
-#     - Task 1: sentiment classification. For test set, evaluate accuracy of “This does suggest that it is  _”.
+#     - Task 2: paraphrase detection.
 # - Plot:
 #     - Matrix: x-axis: model size; y-axis: X%; cell: task 1/2 accuracy
 
@@ -46,7 +46,7 @@ def evaluate(model_name: str):
         if sentence_2[-1] not in [".", "?", "!"]:
             sentence_2 += "."
         
-        processed_sentence_original = f"This does suggest that {sentence_1} and {sentence_2} are"
+        processed_sentence_original = f"Do '{sentence_1}' and '{sentence_2}' have the same meaning ('Yes' or 'No')?"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"
         ).input_ids
@@ -58,7 +58,7 @@ def evaluate(model_name: str):
         preds_original.append(pred_original)
         labels.append(dataset["label"][i])
 
-    labels_original = ["similar" if label == 1 else "different" for label in labels]
+    labels_original = ["Yes" if label == 1 else "No" for label in labels]
     print(preds_original[:20], labels_original[:20])
 
     acc_original = (np.array(preds_original) == np.array(labels_original)).mean()

@@ -24,6 +24,7 @@ from transformers import (
     TrainingArguments,
 )
 
+
 datasets.disable_caching()
 
 
@@ -55,7 +56,8 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
                 sentence_2 += "."
             label = examples["label"][i]
            
-            processed_sentence = f"This does suggest that {sentence_1} and {sentence_2} are {'similar' if label == 1 else 'different'}."
+            processed_sentence = f"Do the sentences '{sentence_1}' and '{sentence_2}' have the same meaning ('Yes' or 'No')? {'Yes' if label == 1 else 'No'}."
+            print("processed_sentence:", processed_sentence)
 
             processed_sentences.append(processed_sentence)
 
