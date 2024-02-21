@@ -56,7 +56,10 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
                 sentence_2 += "."
             label = examples["label"][i]
            
-            processed_sentence = f"Do '{sentence_1}' and '{sentence_2}' have the same meaning ('Yes' or 'No')? {'Yes' if label == 1 else 'No'}."
+            # processed_sentence = f"Do '{sentence_1}' and '{sentence_2}' have the same meaning ('Yes' or 'No')? {'Yes' if label == 1 else 'No'}."
+            # print("processed_sentence:", processed_sentence)
+
+            processed_sentence = f"The meanings of '{sentence_1}' and '{sentence_2}' are {'identical' if label == 1 else 'different'}."
             print("processed_sentence:", processed_sentence)
 
             processed_sentences.append(processed_sentence)
@@ -131,7 +134,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
     eval_results = trainer.evaluate()
     print(f"Perplexity: {math.exp(eval_results['eval_loss']):.2f}")
 
-    tokenizer.save_pretrained(training_args.output_dir)
+    tokenizer.save_pretrained(training_args.output_dir, None, None, True)
     torch.save(model.state_dict(), 'paws_params.pth')
 
 
