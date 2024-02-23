@@ -15,7 +15,7 @@ from colors import red, blue
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_cola_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/interpolated_pre_trained_fine_tuned_model", help="Model name"
 )
 def infer(model_name: str):
     prompt = "it is a terrible movie. this is not"
@@ -30,7 +30,7 @@ def infer(model_name: str):
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_cola_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/interpolated_pre_trained_fine_tuned_model", help="Model name"
 )
 def evaluate(model_name: str):
     dataset = datasets.load_dataset("glue", "cola", split="validation")

@@ -37,7 +37,7 @@ def set_seed(seed: int):
 @click.command()
 @click.option("--model_name", default="distilgpt2", help="Model name")
 @click.option("--pretrained", default=True, help="Use pre-trained weights")
-@click.option("--number_epochs", default=5, help="Number of training epochs")
+@click.option("--number_epochs", default=3, help="Number of training epochs")
 def train(model_name: str, pretrained: bool, number_epochs: int):
     dataset = datasets.load_dataset("glue", "cola")
     dataset.pop("test")  # remove test set because we don't have labels for it
