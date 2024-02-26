@@ -1,7 +1,7 @@
 # Code adapted from https://huggingface.co/docs/transformers/v4.25.1/en/tasks/language_modeling#language-modeling
 
 # - Evaluation:
-#     - Task 1: sentiment classification. For test set, evaluate accuracy of “This does suggest that it is  _”.
+#     - Task 2: paraphrase detection.
 # - Plot:
 #     - Matrix: x-axis: model size; y-axis: X%; cell: task 1/2 accuracy
 
@@ -15,7 +15,7 @@ from colors import red, blue
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_mrpc_new_epochs5", help="Model name"
 )
 def infer(model_name: str):
     prompt = "it is a terrible movie. this is not"
@@ -30,20 +30,23 @@ def infer(model_name: str):
 
 @click.command()
 @click.option(
-    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_mrpc_new_epochs5", help="Model name"
 )
 def evaluate(model_name: str):
-    dataset = datasets.load_dataset("sst2", split="train")
+    dataset = datasets.load_dataset("glue", "mrpc", split="train")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
     preds_original, labels = [], []
-    for i in trange(len(dataset["sentence"])):
-        sentence = dataset["sentence"][i].strip()
-        if sentence[-1] not in [".", "?", "!"]:
-            sentence += "."
-
-        processed_sentence_original = f"{sentence} This does suggest that it is"
+    for i in range(len(dataset["sentence1"])):
+        sentence_1 = dataset["sentence1"][i].strip()
+        sentence_2 = dataset["sentence2"][i].strip()
+        if sentence_1[-1] not in [".", "?", "!"]:
+            sentence_1 += "."
+        if sentence_2[-1] not in [".", "?", "!"]:
+            sentence_2 += "."
+        
+        processed_sentence_original = f"The semantic meanings of '{sentence_1}' and '{sentence_2}' are"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"
         ).input_ids
@@ -53,15 +56,14 @@ def evaluate(model_name: str):
         ].split()[-1]
 
         preds_original.append(pred_original)
-        print(dataset["label"][i])
         labels.append(dataset["label"][i])
 
-    labels_original = ["good" if label == 1 else "bad" for label in labels]
+    labels_original = ["same" if label == 1 else "different" for label in labels]
     print(preds_original[:20], labels_original[:20])
 
     acc_original = (np.array(preds_original) == np.array(labels_original)).mean()
     print(
-        f"Original accuracy: {acc_original * 100:.2f}%\n"
+        f"Accuracy: {acc_original * 100:.2f}%\n"
     )
 
 

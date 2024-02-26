@@ -15,7 +15,7 @@ from colors import red, blue
 
 @click.command()
 @click.option(
-    "--model_name", default="elizabethzhu1/finetuned_distilgpt2_pretrainedTrue_PAWS_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_mrpc_epochs3", help="Model name"
 )
 def infer(model_name: str):
     prompt = "it is a terrible movie. this is not"
@@ -30,10 +30,10 @@ def infer(model_name: str):
 
 @click.command()
 @click.option(
-    "--model_name", default="elizabethzhu1/finetuned_distilgpt2_pretrainedTrue_PAWS_epochs3", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_mrpc_epochs3", help="Model name"
 )
 def evaluate(model_name: str):
-    dataset = datasets.load_dataset("paws", 'labeled_final', split="validation")
+    dataset = datasets.load_dataset("glue", "qqp", split="validation")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -46,8 +46,7 @@ def evaluate(model_name: str):
         if sentence_2[-1] not in [".", "?", "!"]:
             sentence_2 += "."
         
-        # processed_sentence_original = f"Do '{sentence_1}' and '{sentence_2}' have the same meaning ('Yes' or 'No')?"
-        processed_sentence_original = f"The meanings of '{sentence_1}' and '{sentence_2}' are"
+        processed_sentence_original = f"The semantic meanings of questions '{sentence_1}' and '{sentence_2}' are"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"
         ).input_ids
@@ -59,12 +58,12 @@ def evaluate(model_name: str):
         preds_original.append(pred_original)
         labels.append(dataset["label"][i])
 
-    labels_original = ["identical" if label == 1 else "different" for label in labels]
+    labels_original = ["duplicate" if label == 1 else "not_duplicate" for label in labels]
     print(preds_original[:20], labels_original[:20])
 
     acc_original = (np.array(preds_original) == np.array(labels_original)).mean()
     print(
-        f"Original accuracy: {acc_original * 100:.2f}%\n"
+        f"Accuracy: {acc_original * 100:.2f}%\n"
     )
 
 
