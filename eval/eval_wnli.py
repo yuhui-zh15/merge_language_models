@@ -15,7 +15,7 @@ from colors import red, blue
 
 @click.command()
 @click.option(
-    "--model_name", default="distilbert/distilgpt2", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_updated_wnli_epochs8_new", help="Model name"
 )
 def infer(model_name: str):
     prompt = "it is a terrible movie. this is not"
@@ -30,10 +30,10 @@ def infer(model_name: str):
 
 @click.command()
 @click.option(
-    "--model_name", default="distilbert/distilgpt2", help="Model name"
+    "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_updated_wnli_epochs8_new", help="Model name"
 )
 def evaluate(model_name: str):
-    dataset = datasets.load_dataset("glue", "mrpc", split="train")
+    dataset = datasets.load_dataset("glue", "wnli", split="validation")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(model_name)
 
@@ -46,7 +46,7 @@ def evaluate(model_name: str):
         if sentence_2[-1] not in [".", "?", "!"]:
             sentence_2 += "."
         
-        processed_sentence_original = f"The semantic meanings of '{sentence_1}' and '{sentence_2}' are"
+        processed_sentence_original = f"The relationship between '{sentence_1}' and '{sentence_2}' is"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"
         ).input_ids
@@ -58,7 +58,7 @@ def evaluate(model_name: str):
         preds_original.append(pred_original)
         labels.append(dataset["label"][i])
 
-    labels_original = ["same" if label == 1 else "different" for label in labels]
+    labels_original = ["entailment" if label == 1 else "not-entailment" for label in labels]
     print(preds_original[:20], labels_original[:20])
 
     acc_original = (np.array(preds_original) == np.array(labels_original)).mean()

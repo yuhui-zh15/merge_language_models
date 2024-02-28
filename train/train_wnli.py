@@ -38,9 +38,9 @@ def set_seed(seed: int):
 @click.command()
 @click.option("--model_name", default="distilgpt2", help="Model name")
 @click.option("--pretrained", default=True, help="Use pre-trained weights")
-@click.option("--number_epochs", default=5, help="Number of training epochs")
+@click.option("--number_epochs", default=8, help="Number of training epochs")
 def train(model_name: str, pretrained: bool, number_epochs: int):
-    dataset = datasets.load_dataset("glue", 'mrpc')
+    dataset = datasets.load_dataset("glue", 'wnli')
     dataset.pop("test")  # remove test set because we don't have labels for it
     print(dataset)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -56,7 +56,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
                 sentence_2 += "."
             label = examples["label"][i]
 
-            processed_sentence = f"The semantic meanings of '{sentence_1}' and '{sentence_2}' are {'same' if label == 1 else 'different'}."
+            processed_sentence = f"The relationship between '{sentence_1}' and '{sentence_2}' is {'entailment' if label == 1 else 'not-entailment'}."
             print("processed_sentence:", processed_sentence)
 
             processed_sentences.append(processed_sentence)
@@ -108,7 +108,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
     # model.parallelize()  # turn this on when using gpt2-xl
 
     training_args = TrainingArguments(
-        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_mrpc_epochs{number_epochs}_new",
+        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_updated_wnli_epochs{number_epochs}_new",
         evaluation_strategy="epoch",
         learning_rate=1.0e-4,
         weight_decay=0.01,
