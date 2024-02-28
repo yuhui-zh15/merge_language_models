@@ -33,12 +33,12 @@ def infer(model_name: str):
     "--model_name", default="sherryycxie/finetuned_distilgpt2_pretrainedTrue_mrpc_new_epochs5", help="Model name"
 )
 def evaluate(model_name: str):
-    dataset = datasets.load_dataset("glue", "mrpc", split="train")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    dataset = datasets.load_dataset("glue", "mrpc", split="validation")
+    tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+    model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
     preds_original, labels = [], []
-    for i in range(len(dataset["sentence1"])):
+    for i in trange(len(dataset["sentence1"])):
         sentence_1 = dataset["sentence1"][i].strip()
         sentence_2 = dataset["sentence2"][i].strip()
         if sentence_1[-1] not in [".", "?", "!"]:
@@ -49,8 +49,9 @@ def evaluate(model_name: str):
         processed_sentence_original = f"The semantic meanings of '{sentence_1}' and '{sentence_2}' are"
         inputs = tokenizer(
             processed_sentence_original, return_tensors="pt"
-        ).input_ids
-        outputs = model.generate(inputs, max_new_tokens=1, do_sample=False)
+        )
+        inputs = {k: v.cuda() for k, v in inputs.items()}
+        outputs = model.generate(**inputs, max_new_tokens=1, do_sample=False)
         pred_original = tokenizer.batch_decode(outputs, skip_special_tokens=True)[
             0
         ].split()[-1]
