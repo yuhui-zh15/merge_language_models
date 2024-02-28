@@ -6,7 +6,7 @@ import numpy as np
 import re
 from collections import OrderedDict
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModel
 
 def state_dict_to_vector(state_dict, remove_keys=[]):
     shared_state_dict = copy.deepcopy(state_dict)
@@ -73,19 +73,18 @@ def check_state_dicts_equal(state_dict1, state_dict2):
     return True
 
 tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
-model = AutoModelForSeq2SeqLM.from_pretrained("distilgpt2").to("cpu").state_dict()
+model = AutoModel.from_pretrained("distilgpt2").state_dict()
 
 # some keys are tied together so they need to be removed,
 # for example in this case, we will only keep the shared.weight and remove the other two.
-assert (model['shared.weight'] - model['encoder.embed_tokens.weight']).sum() == 0
-assert (model['shared.weight'] - model['decoder.embed_tokens.weight']).sum() == 0
+# assert (model['shared.weight'] - model['encoder.embed_tokens.weight']).sum() == 0
+# assert (model['shared.weight'] - model['decoder.embed_tokens.weight']).sum() == 0
 
 # Load all the models to merge
-model_rte = AutoModelForSeq2SeqLM.from_pretrained("PavanNeerudu/t5-base-finetuned-rte").to("cpu").state_dict()
-model_mnli = AutoModelForSeq2SeqLM.from_pretrained("PavanNeerudu/t5-base-finetuned-mnli").to("cpu").state_dict()
-model_sst2 = AutoModelForSeq2SeqLM.from_pretrained("PavanNeerudu/t5-base-finetuned-sst2").to("cpu").state_dict()
+model_cola = 'params/cola_params.pth'
+model_sst2 = 'params/sst2_params.pth'
 
-ft_checks = [model_rte, model_mnli, model_sst2]
+ft_checks = [model_sst2, model_cola]
 ptm_check = model
 
 # check if all checkpoints have the same paramters.
@@ -257,3 +256,6 @@ merged_check = flat_ptm + lamda * merged_tv
 merged_state_dict = vector_to_state_dict(
     merged_check, ptm_check, remove_keys=remove_keys
 )
+
+if __name__ == "__main__":
+    check_parameterNamesMatch(ft_checks + [ptm_check])
