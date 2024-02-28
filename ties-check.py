@@ -12,10 +12,23 @@ def check_parameters(model, model_checks):
     new_cola = {}
     new_sst2 = {}
     for key in model_checks[0]:
+        # updating the key to be the same as in model
         new_cola[key[12:]] = model_checks[0][key]
     for key in model_checks[1]:
         new_sst2[key[12:]] = model_checks[1][key]
     return [new_cola, new_sst2]
+
+def process_parameters(model, model_checks):
+    updated_cola = {}
+    updated_sst2 = {}
+    for key in model_checks[0]:
+        if key in model:
+            updated_cola[key] = model_checks[0][key]
+    for key in model_checks[1]:
+        if key in model:
+            updated_sst2[key] = model_checks[1][key]
+    return [updated_cola, updated_sst2]
+    
 
 
 def topk_values_mask(M, K=0.7, return_mask=False):
@@ -137,24 +150,31 @@ def vector_to_state_dict(vector, state_dict, remove_keys=[]):
 
 def ties():
     tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+    # model = AutoModel.from_pretrained("distilgpt2").state_dict().to(cpu)
     model = AutoModel.from_pretrained("distilgpt2").state_dict()
     ptm_check = model
 
     model_cola = torch.load('params/cola_params.pth')
     model_sst2 = torch.load('params/sst2_params.pth')
 
+    cpu = torch.device('cpu')
+
     model_checks = [model_cola, model_sst2]
 
+    # Process parameters
     model_checks = check_parameters(model, model_checks)
+    model_checks = process_parameters(model, model_checks)
 
     # Convert the model params to the right form
     flat_ft = torch.vstack(
         [state_dict_to_vector(check) for check in model_checks]
     )
+    flat_ptm = state_dict_to_vector(ptm_check, [])
 
-    tv_flat_checks = flat_ft
+    tv_flat_checks = flat_ft.to(cpu) - flat_ptm.to(cpu)
+    
     # TIES Merging example
-    K = 0.7
+    K = 20
     merge_func = "dis-mean"
     lamda = 1
 
@@ -166,7 +186,7 @@ def ties():
     )
 
     # add back the PTM to the flat merged task vector
-    merged_check = lamda * merged_tv
+    merged_check = flat_ptm + lamda * merged_tv
 
     # convert the flat merged checkpoint to a state dict
     merged_state_dict = vector_to_state_dict(
@@ -185,7 +205,7 @@ if __name__ == "__main__":
     config = AutoConfig.from_pretrained("distilgpt2")
     model = AutoModel.from_config(config)
     model.load_state_dict(merged_state_dict)
-    save_location = "dumps/ties_cola_sst2_state_dict"
+    save_location = "dumps/ties_cola_sst2_state_dict_new"
     model.save_pretrained(save_location)
 
     tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
