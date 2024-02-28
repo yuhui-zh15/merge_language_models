@@ -122,7 +122,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
         model=model,
         args=training_args,
         train_dataset=lm_dataset["train"],
-        eval_dataset=lm_dataset["validation"],
+        eval_dataset=lm_dataset["validation_matched"],
         data_collator=data_collator,
     )
 
