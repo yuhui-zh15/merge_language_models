@@ -38,25 +38,26 @@ def set_seed(seed: int):
 @click.command()
 @click.option("--model_name", default="gpt2", help="Model name")
 @click.option("--pretrained", default=True, help="Use pre-trained weights")
-@click.option("--number_epochs", default=5, help="Number of training epochs")
+@click.option("--number_epochs", default=3, help="Number of training epochs")
 def train(model_name: str, pretrained: bool, number_epochs: int):
-    dataset = datasets.load_dataset("glue", 'mrpc')
-    dataset.pop("test")  # remove test set because we don't have labels for it
+    dataset = datasets.load_dataset("glue", 'mnli')
+    dataset.pop("test_matched")  # remove test set because we don't have labels for it
+    dataset.pop("test_mismatched")  # remove test set because we don't have labels for it
     print(dataset)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     def preprocess_function(examples, verbose: bool = False):
         processed_sentences = []
-        for i in range(len(examples["sentence1"])):
-            sentence_1 = examples["sentence1"][i].strip()
-            sentence_2 = examples["sentence2"][i].strip()
+        for i in range(len(examples["premise"])):
+            sentence_1 = examples["premise"][i].strip()
+            sentence_2 = examples["hypothesis"][i].strip()
             if sentence_1[-1] not in [".", "?", "!"]:
                 sentence_1 += "."
             if sentence_2[-1] not in [".", "?", "!"]:
                 sentence_2 += "."
             label = examples["label"][i]
 
-            processed_sentence = f"The semantic meanings of '{sentence_1}' and '{sentence_2}' are {'same' if label == 1 else 'different'}."
+            processed_sentence = f"The relationship between '{sentence_1}' and '{sentence_2}' is {'neutral' if label == 1 else 'contradiction' if label == 2 else 'entailment'}."
             print("processed_sentence:", processed_sentence)
 
             processed_sentences.append(processed_sentence)
@@ -108,7 +109,7 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
     # model.parallelize()  # turn this on when using gpt2-xl
 
     training_args = TrainingArguments(
-        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_mrpc_epochs{number_epochs}_new",
+        output_dir=f"dumps/finetuned_{model_name}_pretrained{pretrained}_mnli_epochs{number_epochs}_new",
         evaluation_strategy="epoch",
         learning_rate=1.0e-4,
         weight_decay=0.01,
