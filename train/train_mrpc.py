@@ -23,6 +23,7 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+from linearize import LinearizeWrapper
 
 
 datasets.disable_caching()
@@ -86,11 +87,16 @@ def train(model_name: str, pretrained: bool, number_epochs: int):
 
     if pretrained:
         print("Loading pre-trained model")
-        model = AutoModelForCausalLM.from_pretrained(model_name)
+        linearize = True
+        if not linearize:
+            model = AutoModelForCausalLM.from_pretrained(model_name)
+        else:
+            model = LinearizeWrapper(model_name)
     else:
-        print("Training from scratch")
-        config = AutoConfig.from_pretrained(model_name)
-        model = AutoModelForCausalLM.from_config(config)
+        raise NotImplementedError
+        # print("Training from scratch")
+        # config = AutoConfig.from_pretrained(model_name)
+        # model = AutoModelForCausalLM.from_config(config)
 
     # model.parallelize()  # turn this on when using gpt2-xl
 

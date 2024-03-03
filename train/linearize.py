@@ -4,6 +4,14 @@ import os
 import torch
 import torch.nn as nn
 from functorch import jvp, make_functional_with_buffers
+from transformers.modeling_outputs import (
+    BaseModelOutputWithPastAndCrossAttentions,
+    CausalLMOutputWithCrossAttentions,
+    QuestionAnsweringModelOutput,
+    SequenceClassifierOutputWithPast,
+    TokenClassifierOutput,
+)
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # from src.modeling import ImageEncoder
 # from src.utils import DotDict
@@ -137,3 +145,77 @@ class LinearizedModel(nn.Module):
 #         state_dict.pop("model_name")
 #         taylorized_encoder.load_state_dict(state_dict)
 #         return taylorized_encoder
+
+
+class GPTWrapper(nn.Module):
+    def __init__(self, model_name: str):
+        super().__init__()
+        self.model = AutoModelForCausalLM.from_pretrained(model_name)
+
+    def forward(self, x):
+        input_ids: Optional[torch.LongTensor] = x.get("input_ids", None)
+        past_key_values: Optional[Tuple[Tuple[torch.Tensor]]] = x.get(
+            "past_key_values", None
+        )
+        attention_mask: Optional[torch.FloatTensor] = x.get("attention_mask", None)
+        token_type_ids: Optional[torch.LongTensor] = x.get("token_type_ids", None)
+        position_ids: Optional[torch.LongTensor] = x.get("position_ids", None)
+        head_mask: Optional[torch.FloatTensor] = x.get("head_mask", None)
+        inputs_embeds: Optional[torch.FloatTensor] = x.get("inputs_embeds", None)
+        encoder_hidden_states: Optional[torch.Tensor] = x.get(
+            "encoder_hidden_states", None
+        )
+        encoder_attention_mask: Optional[torch.FloatTensor] = x.get(
+            "encoder_attention_mask", None
+        )
+        labels: Optional[torch.LongTensor] = x.get("labels", None)
+        use_cache: Optional[bool] = x.get("use_cache", None)
+        output_attentions: Optional[bool] = x.get("output_attentions", None)
+        output_hidden_states: Optional[bool] = x.get("output_hidden_states", None)
+        return_dict: Optional[bool] = x.get("return_dict", None)
+
+        return self.model(
+            input_ids=input_ids,
+            past_key_values=past_key_values,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids,
+            position_ids=position_ids,
+            head_mask=head_mask,
+            inputs_embeds=inputs_embeds,
+            encoder_hidden_states=encoder_hidden_states,
+            encoder_attention_mask=encoder_attention_mask,
+            labels=labels,
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        ).loss
+
+
+class LinearizeWrapper(nn.Module):
+    def __init__(self, model_name: str):
+        super().__init__()
+        model = GPTWrapper(model_name=model_name)
+        self.model = LinearizedModel(model)
+
+    def forward(self, **kwargs):
+        dict_kwargs = {k: v for k, v in kwargs.items()}
+        loss = self.model(dict_kwargs)
+        return CausalLMOutputWithCrossAttentions(loss=loss)
+
+
+if __name__ == "__main__":
+    model_name = "distilgpt2"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
+    inputs["labels"] = inputs["input_ids"].clone()
+
+    original_model = AutoModelForCausalLM.from_pretrained(model_name)
+    outputs1 = original_model(**inputs)
+
+    linearized_model = LinearizeWrapper(model_name)
+    outputs2 = linearized_model(**inputs)
+
+    print(
+        f"outputs1.loss: {outputs1.loss}, outputs2.loss: {outputs2.loss}, they should be the same"
+    )
